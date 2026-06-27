@@ -1,0 +1,21 @@
+XLiteOCR
+Copyright 2026 EdgeXene LLC
+
+This product is licensed under the Apache License, Version 2.0 (see LICENSE).
+
+This product includes and depends on third-party open-source software, each
+under its own permissive license (Apache-2.0, MIT, BSD, HPND, MPL-2.0). A full
+manifest of bundled and runtime dependencies and their licenses is provided in
+THIRD_PARTY_LICENSES.md. Notable components:
+
+  - PaddleOCR and PP-Structure (Apache-2.0) — text detection/recognition,
+    layout and table parsing, and their released model weights.
+  - PaddlePaddle (Apache-2.0) — inference runtime.
+  - pypdfium2 / PDFium (Apache-2.0 / BSD-3-Clause) — PDF rasterization.
+  - VTracer (MIT) — raster-to-SVG vectorization.
+  - Pillow (HPND) and NumPy (BSD-3-Clause) — imaging and numerics.
+  - FastAPI (MIT) and Uvicorn (BSD-3-Clause) — HTTP service.
+
+No GPL- or AGPL-licensed component is included. See COMMERCIAL-USE.md for the
+license-clearance methodology and the automated compliance gate in
+tests/test_compliance.py.

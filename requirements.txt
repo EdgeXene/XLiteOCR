@@ -1,0 +1,25 @@
+# XLiteOCR pinned dependencies — ALL permissive (Apache-2.0 / MIT / BSD / HPND).
+# No GPL anywhere. See COMMERCIAL-USE.md for the clearance rationale.
+
+# --- OCR engine (Apache-2.0 code + weights) ---
+paddleocr==2.9.1
+paddlepaddle==2.6.2          # CPU build
+
+# --- API (MIT / BSD-3) ---
+fastapi==0.115.6
+uvicorn==0.34.0
+python-multipart==0.0.20
+
+# --- imaging (BSD-3 / HPND) — NO OpenCV, avoids binary-wheel codec license question ---
+numpy==1.26.4
+Pillow==11.0.0
+
+# --- PDF (PDFium BSD-3, V8-disabled wheel) ---
+pypdfium2==4.30.0
+pdfminer.six==20240706       # MIT — deferred secondary vector-extract path only
+
+# --- raster->SVG vectorizer (MIT) — NEVER potrace (GPL) ---
+vtracer==0.6.11
+
+# --- license audit tooling ---
+pip-licenses==5.0.0
