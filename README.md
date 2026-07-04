@@ -41,8 +41,9 @@ for the complete manifest.
 Requires Python 3.11+ (CPU only).
 
 ```bash
-git clone https://github.com/OWNER/REPO.git xlite-ocr
-cd xlite-ocr
+# Download the source: https://edgexene.io/downloads/xliteocr-source.zip
+unzip xliteocr-source.zip
+cd xliteocr
 
 python -m venv venv
 venv/bin/pip install -r requirements.txt
