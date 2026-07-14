@@ -21,14 +21,14 @@ for the complete manifest.
 
 ## Stack
 
-| Layer            | Component                                  | License      |
-| ---------------- | ------------------------------------------ | ------------ |
-| Text det+rec     | PaddleOCR (PP-OCRv3 det / PP-OCRv4 en rec) | Apache-2.0   |
-| Structure/tables | PP-Structure                               | Apache-2.0   |
-| PDF raster       | pypdfium2 (PDFium, V8-free)                | BSD-3        |
-| Raster→SVG       | VTracer                                    | MIT          |
-| Color/imaging    | Pillow + numpy                             | HPND / BSD-3 |
-| API              | FastAPI + uvicorn                          | MIT / BSD-3  |
+| Layer            | Component                                  | License         |
+| ---------------- | ------------------------------------------ | --------------- |
+| Text det+rec     | PaddleOCR (PP-OCRv3 det / PP-OCRv4 en rec) | Apache-2.0      |
+| Structure/tables | PP-Structure                               | Apache-2.0      |
+| PDF raster       | pypdfium2 (PDFium, V8-free)                | BSD-3           |
+| Raster→SVG       | VTracer                                    | MIT             |
+| Color/imaging    | Pillow + numpy                             | MIT-CMU / BSD-3 |
+| API              | FastAPI + uvicorn                          | MIT / BSD-3     |
 
 > PaddleOCR 2.10.0 `lang='en'` serves PP-OCRv3 detection + PP-OCRv4 English
 > recognition (both Apache-2.0). PP-OCRv5 multilingual weights are a config swap;

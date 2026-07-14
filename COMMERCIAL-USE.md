@@ -22,18 +22,19 @@ intent — `tests/test_compliance.py` re-runs them as a gate):
 
 ## Key components
 
-| Component                     | Role                     | License            | Notes                                            |
-| ----------------------------- | ------------------------ | ------------------ | ------------------------------------------------ |
-| paddleocr (code)              | OCR + structure pipeline | Apache-2.0         | repo LICENSE                                     |
-| PP-OCR / PP-Structure weights | det/rec/layout/table     | Apache-2.0         | Baidu release                                    |
-| paddlepaddle (CPU)            | runtime                  | Apache-2.0         |                                                  |
-| pypdfium2 + PDFium            | PDF raster               | Apache-2.0 / BSD-3 | **V8-disabled** (verified)                       |
-| vtracer                       | raster→SVG               | MIT                | replaces GPL `potrace`                           |
-| Pillow                        | imaging                  | HPND (MIT-style)   | replaces OpenCV (avoids codec wheel question)    |
-| numpy / scikit-learn / scipy  | math                     | BSD-3              |                                                  |
-| fastapi / pydantic            | API                      | MIT                |                                                  |
-| uvicorn / click               | server                   | BSD-3              |                                                  |
-| certifi / tqdm                | misc                     | MPL-2.0            | file-level copyleft, NOT viral — commercial-safe |
+| Component                     | Role                     | License            | Notes                                                         |
+| ----------------------------- | ------------------------ | ------------------ | ------------------------------------------------------------- |
+| paddleocr (code)              | OCR + structure pipeline | Apache-2.0         | repo LICENSE                                                  |
+| PP-OCR / PP-Structure weights | det/rec/layout/table     | Apache-2.0         | Baidu release                                                 |
+| paddlepaddle (CPU)            | runtime                  | Apache-2.0         |                                                               |
+| opencv wheels (×3)            | paddleocr internals      | Apache-2.0         | transitive via paddleocr 2.x; never imported by XLiteOCR code |
+| pypdfium2 + PDFium            | PDF raster               | Apache-2.0 / BSD-3 | **V8-disabled** (verified)                                    |
+| vtracer                       | raster→SVG               | MIT                | replaces GPL `potrace`                                        |
+| Pillow                        | imaging (our code)       | MIT-CMU (HPND)     | XLiteOCR's own imaging path, with numpy                       |
+| numpy / scikit-learn / scipy  | math                     | BSD-3              |                                                               |
+| fastapi / pydantic            | API                      | MIT                |                                                               |
+| uvicorn / click               | server                   | BSD-3              |                                                               |
+| certifi / tqdm                | misc                     | MPL-2.0            | file-level copyleft, NOT viral — commercial-safe              |
 
 ## UNKNOWN-license packages, resolved
 
@@ -49,9 +50,13 @@ typing-inspection=MIT · typing_extensions=PSF-2.0 · urllib3=MIT.
 
 - **poppler (GPL)** — NOT used. PDF rasterization is PDFium via pypdfium2 (BSD-3).
 - **potrace (GPL)** — NOT used. Raster→SVG is VTracer (MIT).
-- **opencv-python-headless** — NOT a dependency. Precompiled OpenCV wheels bundle
-  native codecs (LibTIFF/OpenEXR/…) that have historically pulled non-permissive
-  licenses; we use Pillow + numpy and sidestep the question entirely.
+- **OpenCV wheels — transitive via paddleocr 2.x (correction, 2026-07-13).**
+  Earlier revisions of this file claimed OpenCV was not installed; that was
+  wrong. paddleocr 2.x installs `opencv-python`, `opencv-contrib-python` and
+  `opencv-python-headless` (all Apache-2.0 — the license gate resolves and
+  passes them). XLiteOCR's own code never imports `cv2`; our imaging path is
+  Pillow + numpy. The historical codec-bundling concern is a provenance caveat
+  inside PaddleOCR's stack, not a license-gate failure.
 - **dots.mocr weights** — EXCLUDED. Custom non-Apache weights license (unclear
   commercial terms) and GPU-bound. Its feature set is reached via PP-Structure +
   VTracer instead.
