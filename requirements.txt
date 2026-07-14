@@ -2,8 +2,8 @@
 # No GPL anywhere. See COMMERCIAL-USE.md for the clearance rationale.
 
 # --- OCR engine (Apache-2.0 code + weights) ---
-paddleocr==2.9.1
-paddlepaddle==2.6.2          # CPU build
+paddleocr==2.10.0            # last 2.x: classic API, PP-OCRv4 defaults, drops abandoned imgaug
+paddlepaddle==3.3.1          # CPU build; 2.6.x carries unfixed 2024 CVEs, fix line is 3.x
 
 # --- API (MIT / BSD-3) ---
 fastapi==0.115.6

@@ -11,7 +11,7 @@ CPU tuning for the 32-core host (per compliance/perf review):
 Do NOT set OMP_NUM_THREADS in the environment; PaddleOCR's cpu_threads governs
 this and the env var triggers an OpenBLAS warning / can hurt throughput.
 
-Note on weights: PaddleOCR 2.9.1 with lang='en' serves PP-OCRv3 detection +
+Note on weights: PaddleOCR 2.10.0 with lang='en' serves PP-OCRv3 detection +
 PP-OCRv4 English recognition (both Apache-2.0). PP-OCRv5 multilingual weights
 are a config swap later; see README. The pipeline shape is identical.
 """
@@ -59,7 +59,7 @@ def run(image: Image.Image, lang: str = "en") -> list[dict]:
     ocr = _get_ocr(lang)
     arr = _to_ndarray(image)
 
-    # PaddleOCR 2.9.x: ocr(img, cls=False) -> [ [ [box, (text, conf)], ... ] ]
+    # PaddleOCR 2.x classic API: ocr(img, cls=False) -> [ [ [box, (text, conf)], ... ] ]
     with _LOCK:
         raw = ocr.ocr(arr, cls=False)
 
