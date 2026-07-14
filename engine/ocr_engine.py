@@ -5,7 +5,13 @@ Thin wrapper over PaddleOCR (Apache-2.0 code + weights). Loaded once and reused
 detector's quad polygon, and a confidence score.
 
 CPU tuning for the 32-core host (per compliance/perf review):
-  enable_mkldnn=True   -> MKLDNN graph, big win on high-core CPUs
+  enable_mkldnn        -> True on Linux (oneDNN graph, big win on
+                          high-core CPUs). False on Windows: paddle
+                          3.3.1's win_amd64 build fails inside its
+                          oneDNN-fused conv on the PP-OCR models
+                          ("OneDnnContext does not have the input
+                          Filter", operator fused_conv2d); 2.6.2
+                          tolerated it.
   cpu_threads=16       -> pin to 16 to avoid hyperthreading thrashing
   use_gpu=False        -> CPU-only box, no GPU
 Do NOT set OMP_NUM_THREADS in the environment; PaddleOCR's cpu_threads governs
@@ -18,6 +24,7 @@ are a config swap later; see README. The pipeline shape is identical.
 
 from __future__ import annotations
 
+import os
 import threading
 from functools import lru_cache
 
@@ -37,7 +44,9 @@ def _get_ocr(lang: str = "en"):
             lang=lang,
             use_angle_cls=False,
             use_gpu=False,
-            enable_mkldnn=True,
+            # paddle 3.3.1 win_amd64 breaks in the oneDNN fused_conv2d
+            # kernel on these models; Linux is fine both ways.
+            enable_mkldnn=(os.name != "nt"),
             cpu_threads=16,
             show_log=False,
         )
