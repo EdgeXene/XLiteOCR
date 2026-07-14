@@ -39,6 +39,24 @@ def _get_ocr(lang: str = "en"):
     """Warm, cached PaddleOCR instance per language. Thread-safe init."""
     from paddleocr import PaddleOCR
 
+    if os.name == "nt":
+        # paddle 3.3.1 defaults oneDNN ON for CPU inference
+        # (Config().mkldnn_enabled() is True before any enable call)
+        # and its win_amd64 oneDNN fused_conv2d kernel is broken on
+        # the PP-OCR models ("OneDnnContext does not have the input
+        # Filter"). paddleocr only ever ENABLES onednn on its config,
+        # so force it off on every Config before predictors build.
+        from paddle import inference as _pi
+        if not getattr(_pi.Config, "_vx_onednn_off", False):
+            class _Config(_pi.Config):
+                _vx_onednn_off = True
+                def __init__(self, *args):
+                    super().__init__(*args)
+                    (self.disable_onednn
+                     if hasattr(self, "disable_onednn")
+                     else self.disable_mkldnn)()
+            _pi.Config = _Config
+
     with _LOCK:
         return PaddleOCR(
             lang=lang,
