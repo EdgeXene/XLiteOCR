@@ -33,12 +33,29 @@ _FORMULA = os.environ.get("XLITE_FORMULA", "0") == "1"
 def _get_structure(lang: str = "en"):
     from paddleocr import PPStructure
 
+    if os.name == "nt":
+        # Same guard as ocr_engine._get_ocr: paddle 3.3.1 defaults oneDNN
+        # ON for CPU inference and its win_amd64 oneDNN fused_conv2d
+        # kernel is broken on the PP models; paddleocr only ever ENABLES
+        # onednn, so force it off on every Config before predictors build.
+        from paddle import inference as _pi
+        if not getattr(_pi.Config, "_vx_onednn_off", False):
+            class _Config(_pi.Config):
+                _vx_onednn_off = True
+                def __init__(self, *args):
+                    super().__init__(*args)
+                    (self.disable_onednn
+                     if hasattr(self, "disable_onednn")
+                     else self.disable_mkldnn)()
+            _pi.Config = _Config
+
     with _LOCK:
         return PPStructure(
             lang=lang,
             show_log=False,
             use_gpu=False,
-            enable_mkldnn=True,
+            # broken win_amd64 oneDNN kernels; Linux is fine both ways
+            enable_mkldnn=(os.name != "nt"),
             cpu_threads=16,
             recovery=False,
             formula=_FORMULA,
