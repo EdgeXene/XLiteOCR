@@ -23,6 +23,7 @@ Response shape (Mistral-OCR-like):
 
 from __future__ import annotations
 
+import logging
 import sys
 from pathlib import Path
 
@@ -32,8 +33,14 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from fastapi import FastAPI, File, Query, UploadFile
 from fastapi.responses import JSONResponse
 
-from app import pdf as pdf_mod
+from app import limits, pdf as pdf_mod
 from engine import color_detect, ocr_engine, structure
+
+log = logging.getLogger("xlite-ocr")
+
+# Lower Pillow's pixel ceiling and turn its decompression-bomb warning into a
+# hard (catchable) error for the whole process.
+limits.install_pillow_guards()
 
 app = FastAPI(title="XLiteOCR", version="1.0.0")
 
@@ -79,12 +86,25 @@ async def ocr(
         return JSONResponse({"error": "empty file"}, status_code=400)
 
     try:
+        limits.check_upload_size(data)
+    except limits.UploadTooLarge as e:
+        return JSONResponse({"error": str(e)}, status_code=413)
+
+    try:
         if pdf_mod.is_pdf(data, file.filename):
             images = pdf_mod.render_pages(data)
         else:
             images = [pdf_mod.load_image(data)]
-    except Exception as e:
-        return JSONResponse({"error": f"could not read input: {e}"}, status_code=400)
+    except limits.UploadTooLarge as e:
+        return JSONResponse({"error": str(e)}, status_code=413)
+    except Exception:
+        # Detail (library-internal error strings) stays server-side.
+        log.warning("ocr: could not read input", exc_info=True)
+        return JSONResponse({"error": "could not read input"}, status_code=400)
 
-    pages = [_process_page(img, i, structured) for i, img in enumerate(images)]
+    try:
+        pages = [_process_page(img, i, structured) for i, img in enumerate(images)]
+    except Exception:
+        log.error("ocr: processing failed", exc_info=True)
+        return JSONResponse({"error": "processing failed"}, status_code=500)
     return {"pages": pages}

@@ -12,7 +12,7 @@ python-multipart==0.0.20
 
 # --- imaging (BSD-3 / HPND) — NO OpenCV, avoids binary-wheel codec license question ---
 numpy==1.26.4
-Pillow==11.0.0
+Pillow==11.3.0               # in-minor security bump (image-parsing CVE fixes); stays MIT-CMU
 
 # --- PDF (PDFium BSD-3, V8-disabled wheel) ---
 pypdfium2==4.30.0

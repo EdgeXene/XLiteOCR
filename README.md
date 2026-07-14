@@ -12,8 +12,6 @@ Open source under the **Apache License 2.0**. See [COMMERCIAL-USE.md](COMMERCIAL
 for the full dependency license clearance and [THIRD_PARTY_LICENSES.md](THIRD_PARTY_LICENSES.md)
 for the complete manifest.
 
-> Replace `OWNER/REPO` below with the repository URL once published.
-
 ## What it does
 
 - **Core (fast):** text + bounding boxes + **per-region text color** (the

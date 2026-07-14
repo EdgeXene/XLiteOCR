@@ -8,11 +8,14 @@ question (see COMMERCIAL-USE.md).
 Algorithm per region:
   1. Crop the polygon's bounding box from the page image.
   2. Convert to grayscale; threshold (Otsu) to split dark vs. light pixels.
-  3. Text is usually the *minority* class against a larger background, but not
-     always (light text on dark). We pick the class whose mean luminance is
-     furthest from the background-dominant class, i.e. the stroke pixels.
-  4. K-means (k=2) over the stroke pixels' RGB to find the dominant color,
-     ignoring anti-aliasing fringe.
+  3. Take the darker class as the stroke (ink on paper is the common case);
+     only treat the dark class as background when it is a solid dark banner
+     (dominant area AND uniform color), which makes the light class the stroke.
+     This is independent of pixel-count majority, so it stays correct for
+     bold/large headings where the strokes cover >50% of the crop, and it does
+     not rely on edge/corner sampling (tight detector crops clip through glyphs).
+  4. K-means (k=2) over the stroke pixels' RGB and return the cluster furthest
+     from the background color — the solid glyph body, not the anti-alias fringe.
   5. Emit {hex, rgb, name} where name is the nearest CSS basic color.
 """
 
@@ -69,8 +72,19 @@ def _otsu_threshold(gray: np.ndarray) -> int:
     return threshold
 
 
-def _kmeans_dominant(pixels: np.ndarray, k: int = 2, iters: int = 12) -> np.ndarray:
-    """Tiny fixed-iteration k-means; returns the RGB of the largest cluster."""
+def _kmeans_dominant(
+    pixels: np.ndarray,
+    k: int = 2,
+    iters: int = 12,
+    background: np.ndarray | None = None,
+) -> np.ndarray:
+    """Tiny fixed-iteration k-means over stroke pixels.
+
+    Returns the RGB of the cluster whose center is *furthest* from the
+    background color when one is given (the solid glyph body, ignoring the
+    anti-aliasing fringe that sits between stroke and paper); otherwise falls
+    back to the most populous cluster.
+    """
     if len(pixels) == 0:
         return np.array([0, 0, 0], dtype=float)
     if len(pixels) <= k:
@@ -91,6 +105,9 @@ def _kmeans_dominant(pixels: np.ndarray, k: int = 2, iters: int = 12) -> np.ndar
             mask = labels == c
             if mask.any():
                 centers[c] = pts[mask].mean(axis=0)
+    if background is not None:
+        dist = np.linalg.norm(centers - np.asarray(background, dtype=float), axis=1)
+        return centers[int(dist.argmax())]
     counts = np.bincount(labels, minlength=k)
     return centers[counts.argmax()]
 
@@ -103,6 +120,30 @@ def _nearest_name(rgb: tuple[int, int, int]) -> str:
         if d < best_d:
             best_d, best = d, name
     return best
+
+
+_DARK_BG_AREA_FRAC = 0.65   # dark class must dominate the crop to be background
+_DARK_BG_MAX_STD = 25.0     # ...and be color-uniform (a solid banner, not text)
+
+
+def _background_is_dark(dark: np.ndarray, light: np.ndarray, n_total: int) -> bool:
+    """Decide whether the DARK Otsu class is the background (light text on dark).
+
+    The common case is dark ink on light paper, so the stroke is the darker
+    class. We only treat the dark class as background — making the LIGHT class
+    the stroke — when the dark class both dominates the crop area and is
+    color-uniform, i.e. a solid dark banner with lighter text on it. Pixel-count
+    majority alone is not enough (bold headings make the stroke the majority),
+    and edge/corner sampling is unreliable because tight detector crops clip
+    through glyphs; the area+uniformity test is what holds up on real crops.
+    """
+    if len(dark) == 0:
+        return False
+    if len(light) == 0:
+        return True
+    dark_frac = len(dark) / n_total if n_total else 0.0
+    dark_std = float(dark.std(axis=0).mean())
+    return dark_frac > _DARK_BG_AREA_FRAC and dark_std < _DARK_BG_MAX_STD
 
 
 def _polygon_bbox(polygon) -> tuple[int, int, int, int]:
@@ -146,16 +187,18 @@ def region_color(image: Image.Image, polygon) -> dict:
     dark = flat[gray <= t]
     light = flat[gray > t]
 
-    # Stroke = the minority class (text usually covers less area than its
-    # background). Fall back to whichever class is non-empty.
-    if len(dark) == 0:
-        stroke = light
-    elif len(light) == 0:
-        stroke = dark
+    # Stroke = the class the background is NOT. Default to the darker class
+    # (ink on paper); only treat the dark class as background when it is a solid
+    # dark banner (dominant area + uniform color). This stays correct for bold
+    # headings where the stroke covers >50% of the crop, without being fooled by
+    # tight crops that clip through glyphs at the edges.
+    if _background_is_dark(dark, light, len(gray)):
+        stroke, background = light, dark
     else:
-        stroke = dark if len(dark) <= len(light) else light
+        stroke, background = dark, light
 
-    dominant = _kmeans_dominant(stroke, k=2)
+    bg_ref = background.mean(axis=0) if len(background) else None
+    dominant = _kmeans_dominant(stroke, k=2, background=bg_ref)
     rgb = tuple(int(round(c)) for c in np.clip(dominant, 0, 255))
     hexv = "#{:02x}{:02x}{:02x}".format(*rgb)
     return {"hex": hexv, "rgb": list(rgb), "name": _nearest_name(rgb)}
