@@ -1,0 +1,7 @@
+# Sponsor button configuration for this repository.
+# Docs: https://docs.github.com/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/displaying-a-sponsor-button-in-your-repository
+#
+# Stripe is not one of GitHub's first-class funding platforms, so the hosted
+# payment link goes under `custom` (which accepts up to four URLs).
+
+custom: ["https://donate.stripe.com/7sYaEZ1Qxh126KteDRbsc00"]
