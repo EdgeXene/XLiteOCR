@@ -1,9 +1,9 @@
 """Upload and decode limits (defense-in-depth against resource-exhaustion).
 
-The public /ocr route sits behind nginx (client_max_body_size 25m) and the
-VeXtraBOM proxy (30m), but the service also binds 127.0.0.1:3011 directly, so
-any local caller bypasses those caps. These app-level limits protect the single
-uvicorn worker regardless of who calls it.
+A deployment will normally cap request bodies at its reverse proxy, but the
+service also binds 127.0.0.1:3011 directly, so any local caller bypasses those
+caps. These app-level limits protect the single uvicorn worker regardless of
+who calls it.
 
 Stdlib + Pillow only — no new dependency, no license impact.
 """

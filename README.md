@@ -39,9 +39,8 @@ for the complete manifest.
 Requires Python 3.11+ (CPU only).
 
 ```bash
-# Download the source: https://edgexene.io/downloads/xliteocr-source.zip
-unzip xliteocr-source.zip
-cd xliteocr
+git clone https://github.com/EdgeXene/XLiteOCR.git
+cd XLiteOCR
 
 python -m venv venv
 venv/bin/pip install -r requirements.txt
