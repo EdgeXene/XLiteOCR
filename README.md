@@ -52,6 +52,18 @@ venv/bin/uvicorn app.server:app --host 127.0.0.1 --port 3011 --workers 1
 
 Model weights download from the upstream PaddleOCR distribution on first run.
 
+For a reproducible install, add the resolved dependency set:
+
+```bash
+venv/bin/pip install -r requirements.txt -c constraints.txt
+```
+
+`requirements.txt` pins the 13 direct dependencies and explains why each one is
+held where it is. It does not pin their transitive dependencies, so two installs
+weeks apart can resolve differently. [constraints.txt](constraints.txt) is the
+full 63-package set that CI tests against. Both routes are supported; use the
+constrained one when you want exactly what was tested.
+
 Optional: a [PM2](https://pm2.keymetrics.io/) process file is included.
 
 ```bash
