@@ -21,6 +21,16 @@ ALLOWED_TOKENS = (
     "PDFIUM", "PIL", "LIBPNG", "SIL", "OFL",
 )
 
+# Ambient Python packaging tooling: present in every environment, never part of
+# the shipped dependency closure, and with license metadata that varies by
+# environment. Modern setuptools dropped its OSI license classifier in favour of
+# a `License-Expression` field, so in some interpreters it exposes no license
+# string at all despite being MIT.
+#
+# These stay fully subject to test_no_gpl_anywhere below. This set only excuses
+# them from having to NAME a known permissive family, never from the GPL check.
+AMBIENT_TOOLING = frozenset({"pip", "setuptools", "wheel", "pkg_resources", "distribute"})
+
 
 def _license_strings(dist) -> list[str]:
     out = []
@@ -49,10 +59,13 @@ def test_every_package_resolves_to_permissive():
     """No package may be left genuinely unclassifiable."""
     unresolved = []
     for d in m.distributions():
+        name = (d.metadata["Name"] or "").strip()
+        if name.lower() in AMBIENT_TOOLING:
+            continue
         strings = _license_strings(d)
         blob = " ".join(strings).upper()
         if not strings or not any(tok in blob for tok in ALLOWED_TOKENS):
-            unresolved.append((d.metadata["Name"], strings))
+            unresolved.append((name, strings))
     assert not unresolved, f"Packages with unresolved/non-permissive license: {unresolved}"
 
 
