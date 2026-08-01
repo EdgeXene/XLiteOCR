@@ -1,6 +1,7 @@
 # XLiteOCR
 
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
+[![CI](https://github.com/EdgeXene/XLiteOCR/actions/workflows/ci.yml/badge.svg)](https://github.com/EdgeXene/XLiteOCR/actions/workflows/ci.yml)
 
 **Self-hosted, CPU-only OCR.** XLiteOCR turns images and PDFs into structured,
 machine-readable data: text with bounding boxes, the detected color of each line,
