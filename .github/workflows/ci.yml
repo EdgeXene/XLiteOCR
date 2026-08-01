@@ -20,9 +20,9 @@ jobs:
     name: License compliance gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -34,20 +34,39 @@ jobs:
           pip install -r requirements.txt
           pip install pytest
 
+      - name: Record the resolved environment
+        run: |
+          python -c "import sys; print(sys.version)"
+          pip freeze
+
       # The three checks the Apache-2.0 promise rests on: no GPL/AGPL in any
       # installed distribution, every package resolving to a known permissive
       # family, and a V8-free PDFium. Needs installed metadata only, so it runs
       # in well under a second and never touches the network or model weights.
+      #
+      # On failure the output is re-emitted as a workflow annotation, which is
+      # readable from the public API without a token, unlike the job log.
       - name: Run the compliance gate
-        run: python -m pytest tests/test_compliance.py -v
+        run: |
+          set +e
+          out=$(python -m pytest tests/test_compliance.py -v --tb=short -ra 2>&1)
+          code=$?
+          echo "$out"
+          if [ $code -ne 0 ]; then
+            esc="${out//'%'/'%25'}"
+            esc="${esc//$'\n'/'%0A'}"
+            esc="${esc//$'\r'/'%0D'}"
+            echo "::error title=Compliance gate failed::${esc:0:8000}"
+          fi
+          exit $code
 
   tests:
     name: Engine and API tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: "3.11"
           cache: pip
@@ -64,7 +83,7 @@ jobs:
       # PaddleOCR pulls ~137 MB of weights from an upstream CDN on first use.
       # Cache them so later runs neither wait on nor depend on that download.
       - name: Cache PaddleOCR model weights
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.paddleocr
           key: paddleocr-weights-${{ hashFiles('requirements.txt') }}
@@ -77,4 +96,15 @@ jobs:
           pip install pytest
 
       - name: Run the full test suite
-        run: python -m pytest tests/ -v
+        run: |
+          set +e
+          out=$(python -m pytest tests/ -v --tb=short -ra 2>&1)
+          code=$?
+          echo "$out"
+          if [ $code -ne 0 ]; then
+            esc="${out//'%'/'%25'}"
+            esc="${esc//$'\n'/'%0A'}"
+            esc="${esc//$'\r'/'%0D'}"
+            echo "::error title=Test suite failed::${esc:0:8000}"
+          fi
+          exit $code
