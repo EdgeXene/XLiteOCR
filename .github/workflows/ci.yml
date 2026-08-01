@@ -1,0 +1,80 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  # Direct dependencies are pinned, but transitive ones are not: a transitive
+  # package can acquire a GPL license with no change to this repo at all. The
+  # weekly run catches that drift.
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  license-gate:
+    name: License compliance gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      # The three checks the Apache-2.0 promise rests on: no GPL/AGPL in any
+      # installed distribution, every package resolving to a known permissive
+      # family, and a V8-free PDFium. Needs installed metadata only, so it runs
+      # in well under a second and never touches the network or model weights.
+      - name: Run the compliance gate
+        run: python -m pytest tests/test_compliance.py -v
+
+  tests:
+    name: Engine and API tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      # tests/test_engine.py renders text with DejaVu and asserts OCR reads it
+      # back. Install the font explicitly rather than assuming the runner image
+      # ships it: the Pillow fallback is a bitmap font OCR may not resolve.
+      - name: Install DejaVu fonts
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends fonts-dejavu-core
+
+      # PaddleOCR pulls ~137 MB of weights from an upstream CDN on first use.
+      # Cache them so later runs neither wait on nor depend on that download.
+      - name: Cache PaddleOCR model weights
+        uses: actions/cache@v4
+        with:
+          path: ~/.paddleocr
+          key: paddleocr-weights-${{ hashFiles('requirements.txt') }}
+          restore-keys: paddleocr-weights-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install pytest
+
+      - name: Run the full test suite
+        run: python -m pytest tests/ -v
