@@ -23,7 +23,7 @@ numpy==1.26.4
 Pillow==12.3.0               # security pass 2026-07-13: clears 11 advisories incl. CVE-2026-25990 (OOB write on decode)
 
 # --- PDF (PDFium BSD-3, V8-disabled wheel) ---
-pypdfium2==4.30.0
+pypdfium2==5.13.0
 # pdfminer.six removed 2026-07-13: dead dependency (docstring-only deferred
 # path in engine/figures.py) carrying CVE-2025-64512 / PYSEC-2026-1761/1762.
 
