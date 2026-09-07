@@ -173,7 +173,7 @@ def test_pdf_render_scale_clamped():
     """A page with a huge MediaBox must render clamped under the pixel budget,
     not to a multi-GB bitmap."""
     from app import limits
-    from app.pdf import render_pages
+    from app.pdf import iter_pdf_pages
 
     # Minimal one-page PDF with a 6000x6000 MediaBox.
     pdf_bytes = (
@@ -183,7 +183,7 @@ def test_pdf_render_scale_clamped():
         b"3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 6000 6000]>>endobj\n"
         b"trailer<</Root 1 0 R>>\n"
     )
-    pages = render_pages(pdf_bytes)
+    pages = list(iter_pdf_pages(pdf_bytes, limits.PixelBudget()))
     assert pages, "no pages rendered"
     for pg in pages:
         assert pg.width * pg.height <= limits.MAX_IMAGE_PIXELS, (pg.width, pg.height)

@@ -25,8 +25,44 @@ MAX_UPLOAD_BYTES = 30 * 1024 * 1024  # 30 MB
 MAX_IMAGE_PIXELS = 40_000_000
 
 
+# Maximum pages (PDF) or frames (multipage TIFF/GIF) accepted in one document.
+# Exceeding this is REFUSED, not truncated: the previous code rendered the first
+# 50 pages of a 400-page PDF and returned them with no indication that 350 were
+# dropped, which is a wrong answer presented as a complete one.
+MAX_PAGES = 50
+
+# Aggregate decoded pixels across every page of one document. MAX_IMAGE_PIXELS
+# bounds a single page; without this, 50 pages at the per-page ceiling is 2
+# gigapixels of decoded bitmap for one request.
+MAX_TOTAL_PIXELS = 250_000_000
+
+# Vectorized figures are unbounded work per page and unbounded bytes in the
+# response. Both are capped.
+MAX_FIGURES_PER_PAGE = 20
+MAX_FIGURES_PER_DOCUMENT = 100
+
+# Wall clock for processing one accepted document, after the body has arrived.
+PROCESSING_DEADLINE_SECONDS = 300.0
+
+# Ceiling on the serialized response. A pathological page can produce more SVG
+# and text than any caller wants to receive.
+MAX_RESPONSE_BYTES = 32 * 1024 * 1024
+
+
 class UploadTooLarge(ValueError):
     """Raised when a request body or a decoded page exceeds the limits above."""
+
+
+class TooManyPages(ValueError):
+    """Raised when a document declares more pages/frames than MAX_PAGES."""
+
+
+class BudgetExceeded(ValueError):
+    """Raised when the aggregate pixel or response budget is exhausted."""
+
+
+class ProcessingTimeout(ValueError):
+    """Raised when processing exceeds PROCESSING_DEADLINE_SECONDS."""
 
 
 def install_pillow_guards() -> None:
@@ -52,3 +88,33 @@ def check_pixel_budget(width: int, height: int) -> None:
         raise UploadTooLarge(
             f"image exceeds {MAX_IMAGE_PIXELS // 1_000_000} megapixel limit"
         )
+
+
+def check_page_count(declared: int) -> None:
+    """Refuse an over-long document up front, before rendering anything."""
+    if declared > MAX_PAGES:
+        raise TooManyPages(
+            f"document has {declared} pages; the limit is {MAX_PAGES}. "
+            "Split the document and submit the parts."
+        )
+
+
+class PixelBudget:
+    """Aggregate decoded-pixel accounting across the pages of one document."""
+
+    def __init__(self, total: int | None = None):
+        # Read the module attribute at call time, not as a default argument.
+        # A default is evaluated once at import, which silently freezes the
+        # limit: a deployment that raised MAX_TOTAL_PIXELS would still get the
+        # value that was current when this module was first imported.
+        self.total = MAX_TOTAL_PIXELS if total is None else total
+        self.used = 0
+
+    def charge(self, width: int, height: int) -> None:
+        check_pixel_budget(width, height)
+        self.used += width * height
+        if self.used > self.total:
+            raise BudgetExceeded(
+                f"document exceeds the {self.total // 1_000_000} megapixel "
+                "total decode budget"
+            )
