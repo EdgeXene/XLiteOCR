@@ -4,9 +4,12 @@ PRIMARY path (v1, used for ALL figures): VTracer (MIT) traces a raster figure
 crop into geometric SVG paths. Deterministic, in-scope, commercial-safe. Great
 on logos / line-art / diagrams; approximate on photographs (documented honestly).
 
-SECONDARY path (deferred, NOT v1): native PDF vector extraction via
-pdfminer.six (MIT). PDFium has no high-level sub-region->SVG API, so true vector
-recovery means parsing raw content streams. Stubbed here for later.
+SECONDARY path: not implemented, and the previously planned route is
+withdrawn. Native PDF vector extraction via pdfminer.six was the intended
+approach, but that dependency was removed (see requirements.txt) and is not
+coming back on its account. PDFium has no high-level sub-region to SVG API, so
+true vector recovery would mean parsing raw content streams; nothing here does
+that today.
 
 Charts: NOT implemented. An earlier version of this note said the structured
 layer returns PP-Chart2Table data alongside the VTracer SVG. It does not, and

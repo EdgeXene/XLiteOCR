@@ -5,8 +5,8 @@ establish any of them, and several of the guarantees in `SECURITY.md` and
 `app/worker.py` are only true once they are in place. Each section says plainly
 what breaks if it is skipped.
 
-Nothing in this file has been applied to a running service. It is written to be
-reviewed and then executed by an operator.
+These instructions have not been validated end to end. Read them, adapt them to
+your environment, and test them somewhere other than production first.
 
 ## 1. A dedicated unprivileged account
 

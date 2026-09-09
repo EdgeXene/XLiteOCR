@@ -56,7 +56,7 @@ SCHEMA_VERSION = 2
 # hard (catchable) error for the whole process.
 limits.install_pillow_guards()
 
-app = FastAPI(title="XLiteOCR", version="1.1.0")
+app = FastAPI(title="XLiteOCR", version="1.1.1")
 
 # Counts body bytes as the server delivers them, before the multipart parser
 # runs. This is the bound that `check_upload_size(await file.read())` only
@@ -74,7 +74,7 @@ worker = worker_host.DocumentWorker()
 
 @app.get("/health")
 def health():
-    return {"status": "ok", "service": "xlite-ocr", "version": "1.1.0"}
+    return {"status": "ok", "service": "xlite-ocr", "version": "1.1.1"}
 
 
 def _error(status: int, message: str, **extra):

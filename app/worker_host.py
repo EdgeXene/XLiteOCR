@@ -367,7 +367,13 @@ class DocumentWorker:
                 if not chunk:
                     return buffered
                 buffered = (buffered + chunk)[-keep_bytes:]
-        except (asyncio.CancelledError, Exception):
+        except asyncio.CancelledError:
+            # Cancelling the drain is how cleanup stops it, and the buffer is
+            # deliberately discarded rather than returned: it is never logged,
+            # and swallowing the cancellation here would hide it from the
+            # gather in _terminate that is waiting on this task.
+            raise
+        except Exception:
             return buffered
 
     @staticmethod

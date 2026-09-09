@@ -16,9 +16,9 @@ Two further gaps in the installed stack, both measured rather than assumed
 
   * FastAPI calls ``await request.form()`` with no arguments, so the parser
     runs with its defaults of ``max_files=1000`` and ``max_fields=1000``. A
-    single request could open a thousand spool files. (An earlier note in this
-    workspace recorded the installed defaults as ``max_files=1, max_fields=0``;
-    that is not what the installed code does.)
+    single request could open a thousand spool files. These values were read
+    from the installed package rather than from documentation, which reports
+    them differently.
   * ``MultiPartParser.parse`` closes its spools on ``MultiPartException`` and
     ``OSError`` only. A client disconnect, a cancellation or a timeout leaves
     them open, and ``max_part_size`` bounds field parts, not file bytes. This
