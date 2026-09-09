@@ -8,8 +8,12 @@ SECONDARY path (deferred, NOT v1): native PDF vector extraction via
 pdfminer.six (MIT). PDFium has no high-level sub-region->SVG API, so true vector
 recovery means parsing raw content streams. Stubbed here for later.
 
-Charts: the structured layer additionally returns PP-Chart2Table data alongside
-the VTracer SVG (see engine/structure.py).
+Charts: NOT implemented. An earlier version of this note said the structured
+layer returns PP-Chart2Table data alongside the VTracer SVG. It does not, and
+never did: no chart model is loaded anywhere in this repository, and a chart is
+traced as an ordinary figure like any other raster region. The claim is removed
+rather than softened, because a caller reading it would look for chart data
+that is not in the response.
 """
 
 from __future__ import annotations
