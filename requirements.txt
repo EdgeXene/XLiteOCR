@@ -1,5 +1,8 @@
-# XLiteOCR pinned dependencies — ALL permissive (Apache-2.0 / MIT / BSD / HPND).
-# No GPL anywhere. See COMMERCIAL-USE.md for the clearance rationale.
+# XLiteOCR pinned dependencies. No GPL, AGPL or LGPL anywhere. The resolved
+# set is permissive apart from MPL-2.0 (certifi, tqdm), which is weak copyleft
+# and file-scoped, plus OLDAP-2.8 (lmdb) and PSF-2.0 (typing_extensions).
+# THIRD_PARTY_LICENSES.md is the generated, authoritative list.
+# See COMMERCIAL-USE.md for the clearance rationale.
 
 # --- OCR engine (Apache-2.0 code + weights) ---
 paddleocr==2.10.0            # last 2.x: classic API, PP-OCRv4 defaults, drops abandoned imgaug
@@ -32,3 +35,9 @@ vtracer==0.6.11
 
 # --- license audit tooling ---
 pip-licenses==5.0.0
+
+# License audit tooling. tools/license_policy.py imports packaging.licenses,
+# which exists from packaging 24.2, and tests/test_compliance.py fails without
+# it. Pinned here and not only in constraints.txt so the unconstrained install
+# in README.md still gets a working license gate.
+packaging>=24.2

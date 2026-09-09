@@ -5,7 +5,7 @@
 
 **Self-hosted, CPU-only OCR.** XLiteOCR turns images and PDFs into structured,
 machine-readable data: text with bounding boxes, the detected color of each line,
-and an optional structured layout with markdown, HTML tables, and figures
+and an optional structured layout with markdown, typed table cells, and figures
 vectorized to SVG. It runs entirely on your own infrastructure, needs no GPU, and
 is assembled only from permissively licensed components.
 
@@ -18,7 +18,10 @@ for the complete manifest.
 - **Core (fast):** text + bounding boxes + **per-region text color** (the
   dominant glyph-stroke color of each line, as hex / rgb / name).
 - **Structured (optional, `?structured=true`):** markdown + typed layout blocks
-  (title / text / table / figure) + table HTML + **figures vectorized to SVG**.
+  (title / text / table / figure) + **typed table cells** with row, column and
+  spans + **figures vectorized to SVG**. See
+  [docs/structured-output.md](docs/structured-output.md) for the table contract
+  and for how recognized text is escaped in `markdown` but verbatim elsewhere.
 
 ## Stack
 
@@ -96,6 +99,10 @@ Response:
 }]}
 ```
 
+Table blocks carry typed `cells` (row, column, spans, text). The full contract,
+including what `html` and `cell_boxes` mean, is in
+[docs/structured-output.md](docs/structured-output.md).
+
 ## Tests
 
 ```bash
@@ -109,8 +116,18 @@ GPL/AGPL component is present or if the bundled PDFium is not V8-free.
 
 - **No authentication is built in.** It binds to localhost and is meant to sit
   behind your own reverse proxy / auth. See [SECURITY.md](SECURITY.md).
-- **Uploaded documents are processed in memory and never written to disk** by the
-  service.
+- **Uploaded documents are never retained.** An upload exists only for the
+  request that sent it. Up to 1 MB it is held in memory; above that the
+  multipart parser spools it to a temporary file (`SpooledTemporaryFile`,
+  unlinked at creation, so it has no name in the filesystem) which is released
+  when the request ends. **Those bytes do transit the temp filesystem, and on a
+  host where that is persistent storage they reach a disk while the request is
+  in flight.** Mount the temp directory on tmpfs if that matters for your
+  threat model; see [SECURITY.md](SECURITY.md) and [DEPLOYMENT.md](DEPLOYMENT.md).
+  If you put a reverse proxy in front, it will have its own request-buffering
+  threshold, usually far lower than 1 MB, and its own temp file. Nothing is
+  written to a database or any lasting location. Earlier versions of this file
+  said documents were never written to disk at all, which was not accurate.
 - Formula (LaTeX) recognition is **off by default** (`XLITE_FORMULA=1` to enable);
   its model is large and slow, against the lightweight goal.
 - `tools/curate.py` is a data-curation scaffold for future fine-tuning; it does

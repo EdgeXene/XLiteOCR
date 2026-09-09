@@ -1,24 +1,41 @@
 # XLiteOCR — Commercial-Use License Clearance
 
-XLiteOCR is built so it can be **owned and commercialized freely**. Every runtime
-dependency is permissive (Apache-2.0 / MIT / BSD / MPL-2.0 / PSF). **No GPL or
-AGPL anywhere.** This file records the actual verification performed, not
-assumptions.
+XLiteOCR is built so it can be **owned and commercialized freely**. **No GPL,
+AGPL or LGPL anywhere.** The resolved dependency set is permissive apart from
+MPL-2.0 (certifi, tqdm), which is weak copyleft and file-scoped, plus
+OLDAP-2.8 (lmdb) and PSF-2.0 (typing_extensions). This file records the actual
+verification performed, not assumptions.
 
 ## Verification method
 
-Three independent checks, all run against the installed `venv` (not just stated
-intent — `tests/test_compliance.py` re-runs them as a gate):
+Three independent checks, all run against the installed environment rather
+than stated intent, and re-run as a gate by `tests/test_compliance.py`:
 
-1. **Full classifier scan** over every installed distribution for
-   `GNU General Public` / `Affero` / `GPLv2/3` / `AGPL` → **0 hits**.
-2. **UNKNOWN-license resolution** — packages whose license `pip-licenses` could
-   not parse (a metadata-format gap, newer SPDX `License-Expression` fields) were
-   resolved from their own metadata classifiers. Every one is MIT / BSD / Apache /
-   PSF. List below.
+1. **Exact SPDX identifier policy** (`tools/license_policy.py`). Every
+   installed distribution is resolved to a set of SPDX identifiers, and every
+   identifier must appear on an explicit allow-list. It is default-deny, so a
+   prohibited or simply unrecognized license needs no rule of its own, and
+   `OR` is treated as strictly as `AND`: a prohibited identifier is refused
+   wherever it appears, rather than being satisfied by the other branch.
+
+   This replaced a case-insensitive substring test, which is not a licensing
+   question and let five expressions through, among them
+   `MIT AND GPL-3.0-only` (it contains "MIT") and `CC-BY-NC-4.0` (it contains
+   "CC-BY"). `tests/test_license_regressions.py` keeps all five failing.
+
+2. **Prose scan for copyleft markers** over every installed distribution, kept
+   as an independent second look at the raw metadata strings. On its own it is
+   not sufficient, and that is the point: an SPDX identifier spells it
+   `GPL-3.0-only`, which matches none of the prose markers, so this check and
+   check 1 cover different failure modes.
+
 3. **Binary-wheel / bundled-license inspection** — the native libraries that
-   wheels ship were inspected directly, since a source-license audit cannot see
-   what a precompiled binary bundles.
+   wheels ship were inspected directly, since a source-license audit cannot
+   see what a precompiled binary bundles.
+
+`THIRD_PARTY_LICENSES.md` is generated from the installed environment by
+`tools/gen_third_party_licenses.py`, and `--check` fails the suite when it
+drifts. It, not this file, is the authoritative per-package list.
 
 ## Key components
 
@@ -36,15 +53,12 @@ intent — `tests/test_compliance.py` re-runs them as a gate):
 | uvicorn / click               | server                   | BSD-3              |                                                               |
 | certifi / tqdm                | misc                     | MPL-2.0            | file-level copyleft, NOT viral — commercial-safe              |
 
-## UNKNOWN-license packages, resolved
+## Per-package resolution
 
-All resolved to permissive licenses via metadata classifiers:
-
-ImageIO=BSD-2 · RapidFuzz=MIT · anyio=MIT · cffi=MIT · click=BSD-3 ·
-cryptography=Apache-2.0/BSD-3 · idna=BSD-3 · joblib=BSD-3 · lazy-loader=BSD-3 ·
-narwhals=MIT · networkx=BSD-3 · packaging=Apache/BSD · pycparser=BSD-3 ·
-pydantic(+core)=MIT · pyparsing=MIT · scikit-learn=BSD-3 · termcolor=MIT ·
-typing-inspection=MIT · typing_extensions=PSF-2.0 · urllib3=MIT.
+Per-package resolution is no longer maintained by hand here. It is generated
+into `THIRD_PARTY_LICENSES.md`, with the source of each decision recorded per
+row (an SPDX expression, an exact classifier match, or a version-scoped
+exception).
 
 ## Pitfalls explicitly avoided (each would poison commercial use)
 
@@ -66,7 +80,8 @@ typing-inspection=MIT · typing_extensions=PSF-2.0 · urllib3=MIT.
 PDFium's optional V8 JavaScript engine would add licensing/footprint complexity.
 The installed build is **V8-free**, verified three ways:
 
-- `libpdfium.so` is **5.5 MB** (a V8-enabled build is 80–200+ MB).
+- `libpdfium.so` is **7.3 MB** (a V8-enabled build is 80-200+ MB). Measured
+  against the pinned pypdfium2 5.13.0, native PDFium 153.0.7999.0.
 - **Zero** `v8::` / `snapshot_blob` / `natives_blob` strings in the binary.
 - No bundled `libv8` anywhere in the environment.
 - The `FPDFDoc_*JavaScriptAction*` and `IPDF_JSPLATFORM` symbols present are
