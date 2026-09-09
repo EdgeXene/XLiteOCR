@@ -129,19 +129,64 @@ def test_pdfium_is_v8_free():
         "FPDF_InitJavaScriptEngine present — V8-enabled build"
 
 
-def test_third_party_manifest_matches_the_installed_environment():
+def test_third_party_manifest_matches_the_pinned_closure():
     """The license manifest is a claim; this is the thing that checks it.
 
     It was hand-maintained and had drifted: 16 rows named a version other than
     the one installed, including pypdfium2, and one named a pip newer than the
     interpreter had. It is generated now, so drift is a test failure rather
     than a document nobody rereads.
+
+    SKIPPED when the environment is not the pinned resolution. The manifest
+    records the versions this project pins, so comparing it against a freely
+    resolved environment compares two different questions and always fails.
+    The weekly CI run resolves without constraints on purpose, and the check
+    that matters there is the license policy above, which covers every
+    installed distribution and is not skipped.
     """
     import subprocess
     import sys
     from pathlib import Path
 
+    from packaging.utils import canonicalize_name
+
     repo = Path(__file__).resolve().parent.parent
+
+    # Which pins is this environment actually honoring?
+    pins = {}
+    for filename in ("requirements.txt", "constraints.txt"):
+        path = repo / filename
+        if not path.exists():
+            continue
+        for line in path.read_text(encoding="utf-8").splitlines():
+            line = line.split("#", 1)[0].strip()
+            if "==" not in line or line.startswith("-"):
+                continue
+            name, _, version = line.partition("==")
+            pins[canonicalize_name(name.split("[", 1)[0].strip())] = version.strip()
+
+    installed = {}
+    for dist in m.distributions():
+        name = (dist.metadata["Name"] or "").strip()
+        if name:
+            try:
+                installed[canonicalize_name(name)] = dist.version
+            except Exception:
+                pass
+
+    drifted = [
+        f"{name} pinned {version}, installed {installed[name]}"
+        for name, version in pins.items()
+        if name in installed and installed[name] != version
+    ]
+    if drifted:
+        import pytest
+
+        pytest.skip(
+            "environment is not the pinned resolution, so the manifest cannot "
+            "match by construction: " + "; ".join(sorted(drifted)[:5])
+        )
+
     result = subprocess.run(
         [sys.executable, str(repo / "tools" / "gen_third_party_licenses.py"), "--check"],
         capture_output=True, text=True, cwd=repo,
