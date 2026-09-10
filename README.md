@@ -35,7 +35,7 @@ for the complete manifest.
 | API              | FastAPI + uvicorn                          | MIT / BSD-3     |
 
 > PaddleOCR 2.10.0 `lang='en'` serves PP-OCRv3 detection + PP-OCRv4 English
-> recognition (both Apache-2.0). PP-OCRv5 multilingual weights are a config swap;
+> recognition (both Apache-2.0). PP-OCRv4 multilingual weights are a config swap;
 > the pipeline shape is identical.
 
 ## Quick start
