@@ -18,8 +18,10 @@ Do NOT set OMP_NUM_THREADS in the environment; PaddleOCR's cpu_threads governs
 this and the env var triggers an OpenBLAS warning / can hurt throughput.
 
 Note on weights: PaddleOCR 2.10.0 with lang='en' serves PP-OCRv3 detection +
-PP-OCRv4 English recognition (both Apache-2.0). PP-OCRv5 multilingual weights
-are a config swap later; see README. The pipeline shape is identical.
+PP-OCRv4 English recognition (both Apache-2.0). PP-OCRv4 multilingual weights
+are a config swap; see README. PP-OCRv5 is NOT: this paddleocr declares
+SUPPORT_OCR_MODEL_VERSION up to PP-OCRv4 and asserts on anything past it, so v5
+would mean PaddleOCR 3.x. The pipeline shape is identical either way.
 """
 
 from __future__ import annotations
